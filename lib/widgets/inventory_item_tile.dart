@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/inventory_item.dart';
+import 'item_details_dialog.dart';
 
 class InventoryItemTile extends StatelessWidget {
   const InventoryItemTile({
@@ -16,69 +17,80 @@ class InventoryItemTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFBFCFA),
+    return Material(
+      color: const Color(0xFFFBFCFA),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE1E7DC)),
+        side: const BorderSide(color: Color(0xFFE1E7DC)),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEAF2E7),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.category_outlined,
-              color: Color(0xFF2F6F3E),
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.name,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: const Color(0xFF1F2A21),
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Código: ${item.code}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF667065),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          Wrap(
-            spacing: 4,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () {
+          showDialog<void>(
+            context: context,
+            builder: (context) => ItemDetailsDialog(item: item),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
             children: [
-              IconButton(
-                tooltip: 'Editar item',
-                onPressed: onEdit,
-                icon: const Icon(Icons.edit_outlined),
-                color: const Color(0xFF2F6F3E),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF2E7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.category_outlined,
+                  color: Color(0xFF2F6F3E),
+                  size: 22,
+                ),
               ),
-              IconButton(
-                tooltip: 'Excluir item',
-                onPressed: onDelete,
-                icon: const Icon(Icons.delete_outline),
-                color: const Color(0xFF9B2C2C),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.name,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: const Color(0xFF1F2A21),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Código: ${item.code}',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF667065),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Wrap(
+                spacing: 4,
+                children: [
+                  IconButton(
+                    tooltip: 'Editar item',
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit_outlined),
+                    color: const Color(0xFF2F6F3E),
+                  ),
+                  IconButton(
+                    tooltip: 'Excluir item',
+                    onPressed: onDelete,
+                    icon: const Icon(Icons.delete_outline),
+                    color: const Color(0xFF9B2C2C),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

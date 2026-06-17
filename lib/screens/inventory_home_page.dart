@@ -16,6 +16,7 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _codeController = TextEditingController();
+  final _descriptionController = TextEditingController();
   final _searchController = TextEditingController();
   final List<InventoryItem> _items = [];
   bool _showItemForm = false;
@@ -25,6 +26,7 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
   void dispose() {
     _nameController.dispose();
     _codeController.dispose();
+    _descriptionController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -42,6 +44,7 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
 
       return item.name.toLowerCase().contains(query) ||
           item.code.toLowerCase().contains(query) ||
+          item.description.toLowerCase().contains(query) ||
           (queryDigits.isNotEmpty && itemCodeDigits.contains(queryDigits));
     }).toList();
   }
@@ -54,6 +57,7 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
     final item = InventoryItem(
       name: _nameController.text.trim(),
       code: _codeController.text.trim(),
+      description: _descriptionController.text.trim(),
     );
     final wasEditing = _editingItemIndex != null;
 
@@ -69,6 +73,7 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
 
       _nameController.clear();
       _codeController.clear();
+      _descriptionController.clear();
       _showItemForm = false;
     });
 
@@ -107,6 +112,7 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
       _editingItemIndex = itemIndex;
       _nameController.text = item.name;
       _codeController.text = item.code;
+      _descriptionController.text = item.description;
     });
   }
 
@@ -115,6 +121,7 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
       _editingItemIndex = null;
       _nameController.clear();
       _codeController.clear();
+      _descriptionController.clear();
       _showItemForm = false;
     });
   }
@@ -124,6 +131,7 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
       _editingItemIndex = null;
       _nameController.clear();
       _codeController.clear();
+      _descriptionController.clear();
       _showItemForm = true;
     });
   }
@@ -181,6 +189,7 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
         _editingItemIndex = null;
         _nameController.clear();
         _codeController.clear();
+        _descriptionController.clear();
       } else if (_editingItemIndex != null &&
           _editingItemIndex! > deletedIndex) {
         _editingItemIndex = _editingItemIndex! - 1;
@@ -197,20 +206,7 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
     final filteredItems = _filteredItems;
 
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: 82,
-        centerTitle: true,
-        title: Semantics(
-          label: 'Companhia Melhoramentos Norte do Paraná',
-          image: true,
-          child: Image.asset(
-            'assets/companhia.png',
-            key: const ValueKey('company-logo'),
-            height: 56,
-            fit: BoxFit.contain,
-          ),
-        ),
-      ),
+      appBar: const _InventoryTopBar(),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -235,6 +231,8 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
                                     formKey: _formKey,
                                     nameController: _nameController,
                                     codeController: _codeController,
+                                    descriptionController:
+                                        _descriptionController,
                                     isCodeRegistered: _isCodeRegistered,
                                     isEditing: _editingItemIndex != null,
                                     onCancelEditing: _cancelEditing,
@@ -278,6 +276,93 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _InventoryTopBar extends StatelessWidget implements PreferredSizeWidget {
+  const _InventoryTopBar();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(96);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      automaticallyImplyLeading: false,
+      toolbarHeight: preferredSize.height,
+      flexibleSpace: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 420;
+          final horizontalPadding = isCompact ? 18.0 : 28.0;
+          final logoHeight = isCompact ? 66.0 : 72.0;
+
+          return Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Color(0xFF075324),
+                  Color(0xFF0C6A2D),
+                  Color(0xFF0D5E2A),
+                ],
+              ),
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  right: -72,
+                  top: -76,
+                  child: Container(
+                    width: isCompact ? 210 : 250,
+                    height: isCompact ? 210 : 250,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+                SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Semantics(
+                              label: 'Companhia Melhoramentos Norte do Paraná',
+                              image: true,
+                              child: ColorFiltered(
+                                colorFilter: const ColorFilter.mode(
+                                  Colors.white,
+                                  BlendMode.srcIn,
+                                ),
+                                child: Image.asset(
+                                  'assets/companhia.png',
+                                  key: const ValueKey('company-logo'),
+                                  height: logoHeight,
+                                  fit: BoxFit.contain,
+                                  alignment: Alignment.centerLeft,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

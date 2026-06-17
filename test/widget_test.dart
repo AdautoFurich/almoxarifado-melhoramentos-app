@@ -4,6 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:almoxarifadomelhoramentos/main.dart';
 
 void main() {
+  Future<void> pumpInventoryApp(WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1100));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(const AlmoxarifadoApp());
+  }
+
   Future<void> openCreateItemForm(WidgetTester tester) async {
     final showFormButton = find.byKey(
       const ValueKey('show-create-item-form-button'),
@@ -16,8 +22,24 @@ void main() {
     await tester.pump();
   }
 
+  Future<void> tapFormSubmit(
+    WidgetTester tester, {
+    String label = 'Cadastrar item',
+  }) async {
+    final submitButton = find.widgetWithText(
+      FilledButton,
+      label,
+      skipOffstage: false,
+    );
+
+    await tester.ensureVisible(submitButton);
+    await tester.pump();
+    await tester.tap(submitButton);
+    await tester.pump();
+  }
+
   testWidgets('cadastra item e permite buscar por codigo', (tester) async {
-    await tester.pumpWidget(const AlmoxarifadoApp());
+    await pumpInventoryApp(tester);
 
     expect(find.byKey(const ValueKey('company-logo')), findsOneWidget);
     expect(find.text('Nenhum item encontrado.'), findsOneWidget);
@@ -31,8 +53,7 @@ void main() {
       find.bySemanticsLabel('Código do item'),
       '435140170000',
     );
-    await tester.tap(find.widgetWithText(FilledButton, 'Cadastrar item').last);
-    await tester.pump();
+    await tapFormSubmit(tester);
 
     expect(find.text('Redução final'), findsOneWidget);
     expect(find.text('Código: 4351.4017.0000'), findsOneWidget);
@@ -52,7 +73,7 @@ void main() {
   });
 
   testWidgets('bloqueia cadastro com codigo duplicado', (tester) async {
-    await tester.pumpWidget(const AlmoxarifadoApp());
+    await pumpInventoryApp(tester);
 
     await openCreateItemForm(tester);
     await tester.enterText(
@@ -63,8 +84,7 @@ void main() {
       find.bySemanticsLabel('Código do item'),
       '435140170000',
     );
-    await tester.tap(find.widgetWithText(FilledButton, 'Cadastrar item').last);
-    await tester.pump();
+    await tapFormSubmit(tester);
 
     await openCreateItemForm(tester);
     await tester.enterText(find.bySemanticsLabel('Nome do item'), 'Outro item');
@@ -72,8 +92,7 @@ void main() {
       find.bySemanticsLabel('Código do item'),
       '435140170000',
     );
-    await tester.tap(find.widgetWithText(FilledButton, 'Cadastrar item').last);
-    await tester.pump();
+    await tapFormSubmit(tester);
 
     expect(
       find.text('Já existe um item cadastrado com este código'),
@@ -82,11 +101,46 @@ void main() {
     expect(find.text('Código: 4351.4017.0000'), findsOneWidget);
   });
 
-  testWidgets('edita item cadastrado', (tester) async {
-    await tester.binding.setSurfaceSize(const Size(900, 1000));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
+  testWidgets('recolhe formulario de cadastro', (tester) async {
+    await pumpInventoryApp(tester);
 
-    await tester.pumpWidget(const AlmoxarifadoApp());
+    await openCreateItemForm(tester);
+
+    expect(find.bySemanticsLabel('Nome do item'), findsOneWidget);
+
+    final collapseButton = find.text('Recolher', skipOffstage: false);
+
+    await tester.ensureVisible(collapseButton);
+    await tester.pump();
+    await tester.tap(collapseButton);
+    await tester.pump();
+
+    expect(find.bySemanticsLabel('Nome do item'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('show-create-item-form-button')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('fecha formulario pelo botao do cabecalho', (tester) async {
+    await pumpInventoryApp(tester);
+
+    await openCreateItemForm(tester);
+
+    expect(find.bySemanticsLabel('Nome do item'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Fechar cadastro'));
+    await tester.pump();
+
+    expect(find.bySemanticsLabel('Nome do item'), findsNothing);
+    expect(
+      find.byKey(const ValueKey('show-create-item-form-button')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('edita item cadastrado', (tester) async {
+    await pumpInventoryApp(tester);
 
     await openCreateItemForm(tester);
     await tester.enterText(find.bySemanticsLabel('Nome do item'), 'Parafuso');
@@ -94,8 +148,7 @@ void main() {
       find.bySemanticsLabel('Código do item'),
       '111122223333',
     );
-    await tester.tap(find.widgetWithText(FilledButton, 'Cadastrar item').last);
-    await tester.pump();
+    await tapFormSubmit(tester);
 
     final editButton = find.byTooltip('Editar item', skipOffstage: false);
 
@@ -109,24 +162,46 @@ void main() {
       find.bySemanticsLabel('Código do item'),
       '444455556666',
     );
-    final saveButton = find.widgetWithText(
-      FilledButton,
-      'Salvar alterações',
-      skipOffstage: false,
-    );
-
-    await tester.ensureVisible(saveButton);
-    await tester.pump();
-    await tester.tap(saveButton);
-    await tester.pump();
+    await tapFormSubmit(tester, label: 'Salvar alterações');
 
     expect(find.text('Porca'), findsOneWidget);
     expect(find.text('Código: 4444.5555.6666'), findsOneWidget);
     expect(find.text('Parafuso'), findsNothing);
   });
 
+  testWidgets('abre detalhes do item ao tocar no cadastro', (tester) async {
+    await pumpInventoryApp(tester);
+
+    await openCreateItemForm(tester);
+    await tester.enterText(find.bySemanticsLabel('Nome do item'), 'Registro');
+    await tester.enterText(
+      find.bySemanticsLabel('Código do item'),
+      '123456789012',
+    );
+    await tester.enterText(
+      find.bySemanticsLabel('Descrição do item'),
+      'Registro usado na linha principal.',
+    );
+    await tapFormSubmit(tester);
+
+    await tester.tap(find.text('Registro'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Detalhes do item'), findsOneWidget);
+    expect(find.text('Nome'), findsOneWidget);
+    expect(find.text('Código'), findsOneWidget);
+    expect(find.text('Descrição'), findsOneWidget);
+    expect(find.text('1234.5678.9012'), findsOneWidget);
+    expect(find.text('Registro usado na linha principal.'), findsOneWidget);
+
+    await tester.tap(find.text('Fechar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Detalhes do item'), findsNothing);
+  });
+
   testWidgets('exclui item cadastrado com confirmacao', (tester) async {
-    await tester.pumpWidget(const AlmoxarifadoApp());
+    await pumpInventoryApp(tester);
 
     await openCreateItemForm(tester);
     await tester.enterText(find.bySemanticsLabel('Nome do item'), 'Arruela');
@@ -134,8 +209,7 @@ void main() {
       find.bySemanticsLabel('Código do item'),
       '777788889999',
     );
-    await tester.tap(find.widgetWithText(FilledButton, 'Cadastrar item').last);
-    await tester.pump();
+    await tapFormSubmit(tester);
 
     final deleteButton = find.byTooltip('Excluir item', skipOffstage: false);
 
