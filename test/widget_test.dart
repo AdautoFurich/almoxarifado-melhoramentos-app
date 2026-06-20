@@ -169,7 +169,9 @@ void main() {
     expect(find.text('Parafuso'), findsNothing);
   });
 
-  testWidgets('abre detalhes do item ao tocar no cadastro', (tester) async {
+  testWidgets('abre tela de detalhes do item ao tocar no cadastro', (
+    tester,
+  ) async {
     await pumpInventoryApp(tester);
 
     await openCreateItemForm(tester);
@@ -182,6 +184,11 @@ void main() {
       find.bySemanticsLabel('Descrição do item'),
       'Registro usado na linha principal.',
     );
+    await tester.enterText(
+      find.bySemanticsLabel('Localização'),
+      'Corredor A - Prateleira 3',
+    );
+    await tester.enterText(find.bySemanticsLabel('Quantidade'), '12');
     await tapFormSubmit(tester);
 
     await tester.tap(find.text('Registro'));
@@ -191,10 +198,17 @@ void main() {
     expect(find.text('Nome'), findsOneWidget);
     expect(find.text('Código'), findsOneWidget);
     expect(find.text('Descrição'), findsOneWidget);
-    expect(find.text('1234.5678.9012'), findsOneWidget);
+    expect(find.text('Localização'), findsOneWidget);
+    expect(find.text('Quantidade'), findsOneWidget);
+    expect(find.text('Foto'), findsOneWidget);
+    expect(find.text('Histórico'), findsOneWidget);
+    expect(find.text('1234.5678.9012'), findsWidgets);
     expect(find.text('Registro usado na linha principal.'), findsOneWidget);
+    expect(find.text('Corredor A - Prateleira 3'), findsOneWidget);
+    expect(find.text('12 unidade(s)'), findsOneWidget);
+    expect(find.text('Nenhuma foto cadastrada.'), findsOneWidget);
 
-    await tester.tap(find.text('Fechar'));
+    await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
 
     expect(find.text('Detalhes do item'), findsNothing);

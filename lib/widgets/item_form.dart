@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../utils/item_code_formatters.dart';
 
@@ -9,6 +10,8 @@ class ItemForm extends StatelessWidget {
     required this.nameController,
     required this.codeController,
     required this.descriptionController,
+    required this.locationController,
+    required this.quantityController,
     required this.isCodeRegistered,
     required this.isEditing,
     required this.onCancelEditing,
@@ -19,6 +22,8 @@ class ItemForm extends StatelessWidget {
   final TextEditingController nameController;
   final TextEditingController codeController;
   final TextEditingController descriptionController;
+  final TextEditingController locationController;
+  final TextEditingController quantityController;
   final bool Function(String code) isCodeRegistered;
   final bool isEditing;
   final VoidCallback onCancelEditing;
@@ -116,6 +121,60 @@ class ItemForm extends StatelessWidget {
 
                         return null;
                       },
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _FormFieldShell(
+                    icon: Icons.place_outlined,
+                    child: TextFormField(
+                      controller: locationController,
+                      decoration: const InputDecoration(
+                        labelText: 'Localização',
+                        hintText: 'Ex.: Corredor A, Prateleira 3',
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
+                        filled: false,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        labelStyle: TextStyle(
+                          color: Color(0xFF0D6E32),
+                          fontWeight: FontWeight.w800,
+                        ),
+                        hintStyle: TextStyle(color: Color(0xFF7A867D)),
+                      ),
+                      textInputAction: TextInputAction.next,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _FormFieldShell(
+                    icon: Icons.numbers_outlined,
+                    child: TextFormField(
+                      controller: quantityController,
+                      decoration: const InputDecoration(
+                        labelText: 'Quantidade',
+                        hintText: 'Digite a quantidade em estoque',
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
+                        filled: false,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                        floatingLabelBehavior: FloatingLabelBehavior.always,
+                        labelStyle: TextStyle(
+                          color: Color(0xFF0D6E32),
+                          fontWeight: FontWeight.w800,
+                        ),
+                        hintStyle: TextStyle(color: Color(0xFF7A867D)),
+                      ),
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.next,
                     ),
                   ),
                   const SizedBox(height: 10),

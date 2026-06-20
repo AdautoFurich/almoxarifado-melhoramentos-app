@@ -17,6 +17,8 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
   final _nameController = TextEditingController();
   final _codeController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _quantityController = TextEditingController();
   final _searchController = TextEditingController();
   final List<InventoryItem> _items = [];
   bool _showItemForm = false;
@@ -27,6 +29,8 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
     _nameController.dispose();
     _codeController.dispose();
     _descriptionController.dispose();
+    _locationController.dispose();
+    _quantityController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -45,6 +49,8 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
       return item.name.toLowerCase().contains(query) ||
           item.code.toLowerCase().contains(query) ||
           item.description.toLowerCase().contains(query) ||
+          item.location.toLowerCase().contains(query) ||
+          item.quantity.toString().contains(query) ||
           (queryDigits.isNotEmpty && itemCodeDigits.contains(queryDigits));
     }).toList();
   }
@@ -54,12 +60,23 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
       return;
     }
 
+    final wasEditing = _editingItemIndex != null;
+    final previousItem = wasEditing ? _items[_editingItemIndex!] : null;
+    final quantity = int.tryParse(_quantityController.text.trim()) ?? 0;
     final item = InventoryItem(
       name: _nameController.text.trim(),
       code: _codeController.text.trim(),
       description: _descriptionController.text.trim(),
+      location: _locationController.text.trim(),
+      quantity: quantity,
+      photoPath: previousItem?.photoPath,
+      history: [
+        ...?previousItem?.history,
+        wasEditing
+            ? 'Dados atualizados em ${_formatDate(DateTime.now())}.'
+            : 'Item cadastrado em ${_formatDate(DateTime.now())}.',
+      ],
     );
-    final wasEditing = _editingItemIndex != null;
 
     setState(() {
       final editingItemIndex = _editingItemIndex;
@@ -74,6 +91,8 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
       _nameController.clear();
       _codeController.clear();
       _descriptionController.clear();
+      _locationController.clear();
+      _quantityController.clear();
       _showItemForm = false;
     });
 
@@ -113,6 +132,10 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
       _nameController.text = item.name;
       _codeController.text = item.code;
       _descriptionController.text = item.description;
+      _locationController.text = item.location;
+      _quantityController.text = item.quantity == 0
+          ? ''
+          : item.quantity.toString();
     });
   }
 
@@ -122,6 +145,8 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
       _nameController.clear();
       _codeController.clear();
       _descriptionController.clear();
+      _locationController.clear();
+      _quantityController.clear();
       _showItemForm = false;
     });
   }
@@ -132,6 +157,8 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
       _nameController.clear();
       _codeController.clear();
       _descriptionController.clear();
+      _locationController.clear();
+      _quantityController.clear();
       _showItemForm = true;
     });
   }
@@ -190,6 +217,8 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
         _nameController.clear();
         _codeController.clear();
         _descriptionController.clear();
+        _locationController.clear();
+        _quantityController.clear();
       } else if (_editingItemIndex != null &&
           _editingItemIndex! > deletedIndex) {
         _editingItemIndex = _editingItemIndex! - 1;
@@ -233,6 +262,8 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
                                     codeController: _codeController,
                                     descriptionController:
                                         _descriptionController,
+                                    locationController: _locationController,
+                                    quantityController: _quantityController,
                                     isCodeRegistered: _isCodeRegistered,
                                     isEditing: _editingItemIndex != null,
                                     onCancelEditing: _cancelEditing,
@@ -279,6 +310,16 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
       ),
     );
   }
+}
+
+String _formatDate(DateTime date) {
+  final day = date.day.toString().padLeft(2, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  final year = date.year.toString();
+  final hour = date.hour.toString().padLeft(2, '0');
+  final minute = date.minute.toString().padLeft(2, '0');
+
+  return '$day/$month/$year às $hour:$minute';
 }
 
 class _InventoryTopBar extends StatelessWidget implements PreferredSizeWidget {
