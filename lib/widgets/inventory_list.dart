@@ -81,7 +81,6 @@ class _InventoryListHeader extends StatelessWidget {
           decoration: BoxDecoration(
             color: const Color(0xFFF0F5ED),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFD9E4D3)),
           ),
           child: const Icon(
             Icons.inventory_2_outlined,

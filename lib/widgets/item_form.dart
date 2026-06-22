@@ -1,5 +1,6 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../utils/item_code_formatters.dart';
 
@@ -10,8 +11,10 @@ class ItemForm extends StatelessWidget {
     required this.nameController,
     required this.codeController,
     required this.descriptionController,
-    required this.locationController,
-    required this.quantityController,
+    required this.photoPath,
+    required this.onTakePhoto,
+    required this.onChoosePhoto,
+    required this.onRemovePhoto,
     required this.isCodeRegistered,
     required this.isEditing,
     required this.onCancelEditing,
@@ -22,8 +25,10 @@ class ItemForm extends StatelessWidget {
   final TextEditingController nameController;
   final TextEditingController codeController;
   final TextEditingController descriptionController;
-  final TextEditingController locationController;
-  final TextEditingController quantityController;
+  final String? photoPath;
+  final VoidCallback onTakePhoto;
+  final VoidCallback onChoosePhoto;
+  final VoidCallback onRemovePhoto;
   final bool Function(String code) isCodeRegistered;
   final bool isEditing;
   final VoidCallback onCancelEditing;
@@ -125,60 +130,6 @@ class ItemForm extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   _FormFieldShell(
-                    icon: Icons.place_outlined,
-                    child: TextFormField(
-                      controller: locationController,
-                      decoration: const InputDecoration(
-                        labelText: 'Localização',
-                        hintText: 'Ex.: Corredor A, Prateleira 3',
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        focusedErrorBorder: InputBorder.none,
-                        filled: false,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                        floatingLabelBehavior: FloatingLabelBehavior.always,
-                        labelStyle: TextStyle(
-                          color: Color(0xFF0D6E32),
-                          fontWeight: FontWeight.w800,
-                        ),
-                        hintStyle: TextStyle(color: Color(0xFF7A867D)),
-                      ),
-                      textInputAction: TextInputAction.next,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _FormFieldShell(
-                    icon: Icons.numbers_outlined,
-                    child: TextFormField(
-                      controller: quantityController,
-                      decoration: const InputDecoration(
-                        labelText: 'Quantidade',
-                        hintText: 'Digite a quantidade em estoque',
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        errorBorder: InputBorder.none,
-                        focusedErrorBorder: InputBorder.none,
-                        filled: false,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                        floatingLabelBehavior: FloatingLabelBehavior.always,
-                        labelStyle: TextStyle(
-                          color: Color(0xFF0D6E32),
-                          fontWeight: FontWeight.w800,
-                        ),
-                        hintStyle: TextStyle(color: Color(0xFF7A867D)),
-                      ),
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.next,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _FormFieldShell(
                     icon: Icons.description_outlined,
                     alignIconToTop: true,
                     child: TextFormField(
@@ -224,6 +175,13 @@ class ItemForm extends StatelessWidget {
                       },
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  _PhotoPicker(
+                    photoPath: photoPath,
+                    onTakePhoto: onTakePhoto,
+                    onChoosePhoto: onChoosePhoto,
+                    onRemovePhoto: onRemovePhoto,
+                  ),
                   const SizedBox(height: 12),
                   FilledButton.icon(
                     onPressed: onSubmit,
@@ -243,6 +201,95 @@ class ItemForm extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PhotoPicker extends StatelessWidget {
+  const _PhotoPicker({
+    required this.photoPath,
+    required this.onTakePhoto,
+    required this.onChoosePhoto,
+    required this.onRemovePhoto,
+  });
+
+  final String? photoPath;
+  final VoidCallback onTakePhoto;
+  final VoidCallback onChoosePhoto;
+  final VoidCallback onRemovePhoto;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPhoto = photoPath != null && File(photoPath!).existsSync();
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE8EDE5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.photo_camera_outlined,
+                color: Color(0xFF0D6E32),
+                size: 21,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Foto do item',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFF0D6E32),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const Spacer(),
+              if (hasPhoto)
+                IconButton(
+                  tooltip: 'Remover foto',
+                  onPressed: onRemovePhoto,
+                  icon: const Icon(Icons.delete_outline),
+                  color: const Color(0xFF9B2C2C),
+                ),
+            ],
+          ),
+          if (hasPhoto) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.file(
+                File(photoPath!),
+                height: 150,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onTakePhoto,
+                  icon: const Icon(Icons.camera_alt_outlined),
+                  label: const Text('Câmera'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: onChoosePhoto,
+                  icon: const Icon(Icons.photo_library_outlined),
+                  label: const Text('Galeria'),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -371,14 +418,7 @@ class _FormFieldShell extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE0E8DF)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
+        border: Border.all(color: const Color(0xFFE8EDE5)),
       ),
       child: Row(
         crossAxisAlignment: alignIconToTop

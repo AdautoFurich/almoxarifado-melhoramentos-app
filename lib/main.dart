@@ -38,7 +38,7 @@ class AlmoxarifadoApp extends StatelessWidget {
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
-            side: const BorderSide(color: Color(0xFFE1E7DC)),
+            side: const BorderSide(color: Color(0xFFE8EDE5)),
           ),
         ),
         filledButtonTheme: FilledButtonThemeData(
@@ -64,11 +64,11 @@ class AlmoxarifadoApp extends StatelessWidget {
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFFC9D3C4)),
+            borderSide: const BorderSide(color: Color(0xFFD8E0D5)),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFFC9D3C4)),
+            borderSide: const BorderSide(color: Color(0xFFD8E0D5)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),

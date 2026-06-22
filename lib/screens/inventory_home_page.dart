@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../models/inventory_item.dart';
+import '../services/item_photo_service.dart';
 import '../widgets/create_item_button.dart';
 import '../widgets/inventory_list.dart';
 import '../widgets/item_form.dart';
@@ -17,20 +21,19 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
   final _nameController = TextEditingController();
   final _codeController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _locationController = TextEditingController();
-  final _quantityController = TextEditingController();
   final _searchController = TextEditingController();
+  final _photoService = ItemPhotoService();
   final List<InventoryItem> _items = [];
   bool _showItemForm = false;
   int? _editingItemIndex;
+  String? _selectedPhotoPath;
+  String? _originalPhotoPath;
 
   @override
   void dispose() {
     _nameController.dispose();
     _codeController.dispose();
     _descriptionController.dispose();
-    _locationController.dispose();
-    _quantityController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -49,8 +52,6 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
       return item.name.toLowerCase().contains(query) ||
           item.code.toLowerCase().contains(query) ||
           item.description.toLowerCase().contains(query) ||
-          item.location.toLowerCase().contains(query) ||
-          item.quantity.toString().contains(query) ||
           (queryDigits.isNotEmpty && itemCodeDigits.contains(queryDigits));
     }).toList();
   }
@@ -62,14 +63,11 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
 
     final wasEditing = _editingItemIndex != null;
     final previousItem = wasEditing ? _items[_editingItemIndex!] : null;
-    final quantity = int.tryParse(_quantityController.text.trim()) ?? 0;
     final item = InventoryItem(
       name: _nameController.text.trim(),
       code: _codeController.text.trim(),
       description: _descriptionController.text.trim(),
-      location: _locationController.text.trim(),
-      quantity: quantity,
-      photoPath: previousItem?.photoPath,
+      photoPath: _selectedPhotoPath,
       history: [
         ...?previousItem?.history,
         wasEditing
@@ -91,10 +89,14 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
       _nameController.clear();
       _codeController.clear();
       _descriptionController.clear();
-      _locationController.clear();
-      _quantityController.clear();
+      _selectedPhotoPath = null;
+      _originalPhotoPath = null;
       _showItemForm = false;
     });
+
+    if (previousItem?.photoPath != item.photoPath) {
+      unawaited(_photoService.deletePhoto(previousItem?.photoPath));
+    }
 
     final message = wasEditing
         ? 'Item atualizado com sucesso.'
@@ -132,23 +134,27 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
       _nameController.text = item.name;
       _codeController.text = item.code;
       _descriptionController.text = item.description;
-      _locationController.text = item.location;
-      _quantityController.text = item.quantity == 0
-          ? ''
-          : item.quantity.toString();
+      _selectedPhotoPath = item.photoPath;
+      _originalPhotoPath = item.photoPath;
     });
   }
 
   void _cancelEditing() {
+    final discardedPhotoPath = _selectedPhotoPath != _originalPhotoPath
+        ? _selectedPhotoPath
+        : null;
+
     setState(() {
       _editingItemIndex = null;
       _nameController.clear();
       _codeController.clear();
       _descriptionController.clear();
-      _locationController.clear();
-      _quantityController.clear();
+      _selectedPhotoPath = null;
+      _originalPhotoPath = null;
       _showItemForm = false;
     });
+
+    unawaited(_photoService.deletePhoto(discardedPhotoPath));
   }
 
   void _showCreateItemForm() {
@@ -157,10 +163,50 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
       _nameController.clear();
       _codeController.clear();
       _descriptionController.clear();
-      _locationController.clear();
-      _quantityController.clear();
+      _selectedPhotoPath = null;
+      _originalPhotoPath = null;
       _showItemForm = true;
     });
+  }
+
+  Future<void> _pickPhoto(ImageSource source) async {
+    try {
+      final newPhotoPath = await _photoService.pickAndStore(source);
+
+      if (newPhotoPath == null || !mounted) {
+        return;
+      }
+
+      final discardedPhotoPath = _selectedPhotoPath != _originalPhotoPath
+          ? _selectedPhotoPath
+          : null;
+
+      setState(() {
+        _selectedPhotoPath = newPhotoPath;
+      });
+
+      await _photoService.deletePhoto(discardedPhotoPath);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível adicionar a foto.')),
+      );
+    }
+  }
+
+  void _removePhoto() {
+    final discardedPhotoPath = _selectedPhotoPath != _originalPhotoPath
+        ? _selectedPhotoPath
+        : null;
+
+    setState(() {
+      _selectedPhotoPath = null;
+    });
+
+    unawaited(_photoService.deletePhoto(discardedPhotoPath));
   }
 
   Future<void> _confirmDeleteItem(InventoryItem item) async {
@@ -203,13 +249,19 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
       return;
     }
 
+    final deletedIndex = _items.indexOf(item);
+    if (deletedIndex == -1) {
+      return;
+    }
+
+    final photoPath = item.photoPath;
+    final discardedDraftPhotoPath =
+        _editingItemIndex == deletedIndex &&
+            _selectedPhotoPath != _originalPhotoPath
+        ? _selectedPhotoPath
+        : null;
+
     setState(() {
-      final deletedIndex = _items.indexOf(item);
-
-      if (deletedIndex == -1) {
-        return;
-      }
-
       _items.removeAt(deletedIndex);
 
       if (_editingItemIndex == deletedIndex) {
@@ -217,8 +269,8 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
         _nameController.clear();
         _codeController.clear();
         _descriptionController.clear();
-        _locationController.clear();
-        _quantityController.clear();
+        _selectedPhotoPath = null;
+        _originalPhotoPath = null;
       } else if (_editingItemIndex != null &&
           _editingItemIndex! > deletedIndex) {
         _editingItemIndex = _editingItemIndex! - 1;
@@ -228,6 +280,8 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Item excluído com sucesso.')));
+    unawaited(_photoService.deletePhoto(photoPath));
+    unawaited(_photoService.deletePhoto(discardedDraftPhotoPath));
   }
 
   @override
@@ -262,8 +316,12 @@ class _InventoryHomePageState extends State<InventoryHomePage> {
                                     codeController: _codeController,
                                     descriptionController:
                                         _descriptionController,
-                                    locationController: _locationController,
-                                    quantityController: _quantityController,
+                                    photoPath: _selectedPhotoPath,
+                                    onTakePhoto: () =>
+                                        _pickPhoto(ImageSource.camera),
+                                    onChoosePhoto: () =>
+                                        _pickPhoto(ImageSource.gallery),
+                                    onRemovePhoto: _removePhoto,
                                     isCodeRegistered: _isCodeRegistered,
                                     isEditing: _editingItemIndex != null,
                                     onCancelEditing: _cancelEditing,
@@ -421,7 +479,6 @@ class _DeleteItemDetail extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFF7F9F4),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE1E7DC)),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../models/inventory_item.dart';
@@ -33,23 +35,6 @@ class ItemDetailsPage extends StatelessWidget {
                         value: item.description.isEmpty
                             ? 'Sem descrição cadastrada.'
                             : item.description,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  _DetailsSection(
-                    title: 'Estoque',
-                    icon: Icons.warehouse_outlined,
-                    children: [
-                      _DetailTile(
-                        label: 'Localização',
-                        value: item.location.isEmpty
-                            ? 'Não informada.'
-                            : item.location,
-                      ),
-                      _DetailTile(
-                        label: 'Quantidade',
-                        value: '${item.quantity} unidade(s)',
                       ),
                     ],
                   ),
@@ -186,7 +171,6 @@ class _DetailTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFF7F9F4),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE1E7DC)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,7 +208,10 @@ class _PhotoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasPhoto = photoPath != null && photoPath!.isNotEmpty;
+    final hasPhoto =
+        photoPath != null &&
+        photoPath!.isNotEmpty &&
+        File(photoPath!).existsSync();
 
     return _DetailsSection(
       title: 'Foto',
@@ -235,12 +222,15 @@ class _PhotoSection extends StatelessWidget {
           decoration: BoxDecoration(
             color: const Color(0xFFF7F9F4),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFE1E7DC)),
           ),
           child: hasPhoto
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.asset(photoPath!, fit: BoxFit.cover),
+                  child: Image.file(
+                    File(photoPath!),
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                  ),
                 )
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,

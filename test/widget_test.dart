@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:almoxarifadomelhoramentos/main.dart';
+import 'package:almoxarifadomelhoramentos/models/inventory_item.dart';
+import 'package:almoxarifadomelhoramentos/widgets/inventory_item_tile.dart';
 
 void main() {
   Future<void> pumpInventoryApp(WidgetTester tester) async {
@@ -107,6 +109,9 @@ void main() {
     await openCreateItemForm(tester);
 
     expect(find.bySemanticsLabel('Nome do item'), findsOneWidget);
+    expect(find.text('Foto do item'), findsOneWidget);
+    expect(find.text('Câmera'), findsOneWidget);
+    expect(find.text('Galeria'), findsOneWidget);
 
     final collapseButton = find.text('Recolher', skipOffstage: false);
 
@@ -184,11 +189,6 @@ void main() {
       find.bySemanticsLabel('Descrição do item'),
       'Registro usado na linha principal.',
     );
-    await tester.enterText(
-      find.bySemanticsLabel('Localização'),
-      'Corredor A - Prateleira 3',
-    );
-    await tester.enterText(find.bySemanticsLabel('Quantidade'), '12');
     await tapFormSubmit(tester);
 
     await tester.tap(find.text('Registro'));
@@ -198,14 +198,10 @@ void main() {
     expect(find.text('Nome'), findsOneWidget);
     expect(find.text('Código'), findsOneWidget);
     expect(find.text('Descrição'), findsOneWidget);
-    expect(find.text('Localização'), findsOneWidget);
-    expect(find.text('Quantidade'), findsOneWidget);
     expect(find.text('Foto'), findsOneWidget);
     expect(find.text('Histórico'), findsOneWidget);
     expect(find.text('1234.5678.9012'), findsWidgets);
     expect(find.text('Registro usado na linha principal.'), findsOneWidget);
-    expect(find.text('Corredor A - Prateleira 3'), findsOneWidget);
-    expect(find.text('12 unidade(s)'), findsOneWidget);
     expect(find.text('Nenhuma foto cadastrada.'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Back'));
@@ -241,5 +237,24 @@ void main() {
 
     expect(find.text('Arruela'), findsNothing);
     expect(find.text('Nenhum item encontrado.'), findsOneWidget);
+  });
+
+  testWidgets('mostra miniatura quando o item possui foto', (tester) async {
+    const item = InventoryItem(
+      name: 'Item com foto',
+      code: '1234.5678.9012',
+      photoPath: 'assets/companhia.png',
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: InventoryItemTile(item: item, onEdit: () {}, onDelete: () {}),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('item-photo-thumbnail')), findsOneWidget);
   });
 }

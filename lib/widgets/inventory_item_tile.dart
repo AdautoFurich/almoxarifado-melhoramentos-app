@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../models/inventory_item.dart';
@@ -21,7 +23,7 @@ class InventoryItemTile extends StatelessWidget {
       color: const Color(0xFFFBFCFA),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-        side: const BorderSide(color: Color(0xFFE1E7DC)),
+        side: const BorderSide(color: Color(0xFFE8EDE5)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
@@ -40,19 +42,7 @@ class InventoryItemTile extends StatelessWidget {
 
               return Row(
                 children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEAF2E7),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.category_outlined,
-                      color: Color(0xFF2F6F3E),
-                      size: 22,
-                    ),
-                  ),
+                  _ItemThumbnail(photoPath: item.photoPath),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -72,21 +62,6 @@ class InventoryItemTile extends StatelessWidget {
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(color: const Color(0xFF667065)),
                         ),
-                        if (item.location.isNotEmpty || item.quantity > 0) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            [
-                              if (item.location.isNotEmpty) item.location,
-                              if (item.quantity > 0)
-                                '${item.quantity} unidade(s)',
-                            ].join(' - '),
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: const Color(0xFF667065),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
@@ -115,6 +90,51 @@ class InventoryItemTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ItemThumbnail extends StatelessWidget {
+  const _ItemThumbnail({required this.photoPath});
+
+  final String? photoPath;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPhoto =
+        photoPath != null &&
+        photoPath!.isNotEmpty &&
+        File(photoPath!).existsSync();
+
+    return Container(
+      width: 52,
+      height: 52,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAF2E7),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: hasPhoto
+          ? Image.file(
+              File(photoPath!),
+              key: const ValueKey('item-photo-thumbnail'),
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => const _ThumbnailPlaceholder(),
+            )
+          : const _ThumbnailPlaceholder(),
+    );
+  }
+}
+
+class _ThumbnailPlaceholder extends StatelessWidget {
+  const _ThumbnailPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Icon(
+      Icons.category_outlined,
+      color: Color(0xFF2F6F3E),
+      size: 24,
     );
   }
 }
